@@ -1,156 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PLURIVERSITY — Sheet to Game tool</title>
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 16px; color: #1d2733; }
-    h1 { letter-spacing: 2px; }
-    textarea { width: 100%; height: 160px; font-family: monospace; font-size: 12px; }
-    button { font-size: 16px; padding: 10px 18px; margin: 10px 8px 10px 0; cursor: pointer; }
-    .step { background: #f4f1e8; padding: 12px 16px; border-radius: 8px; margin: 18px 0; }
-    #checks li.bad { color: #b00020; }
-    #checks li.ok { color: #1b7a33; }
-    #checks li.warn { color: #a05a00; }
-  </style>
+<meta charset="UTF-8">
+<title>PLURIVERSITY — Sheet to Game tool</title>
+<style>
+body { font-family: Arial, Helvetica, sans-serif; max-width: 900px;
+margin: 30px auto; padding: 0 16px; color: #1d2733; }
+h1 { letter-spacing: 2px; }
+textarea { width: 100%; height: 160px; font-family: monospace; font-size:
+12px; }
+button { font-size: 16px; padding: 10px 18px; margin: 10px 8px 10px 0;
+cursor: pointer; }
+.step { background: #f4f1e8; padding: 12px 16px; border-radius: 8px;
+margin: 18px 0; }
+#checks li.bad { color: #b00020; }
+#checks li.ok { color: #1b7a33; }
+#checks li.warn { color: #a05a00; }
+</style>
 </head>
 <body>
-  <h1>Sheet → Game</h1>
-  <p>This page turns your node sheet into the <b>game-data.js</b> file the game reads. Nothing is sent anywhere; it all happens in this page.</p>
-
-  <div class="step">
-    <b>1.</b> In the node sheet, open the <b>Nodes</b> tab. Click the top-left corner (or press Ctrl+A / Cmd+A), copy (Ctrl+C / Cmd+C), and paste here:
-    <textarea id="nodesIn" placeholder="Paste the whole Nodes tab here, including the header row"></textarea>
-  </div>
-
-  <div class="step">
-    <b>2.</b> Do the same with the <b>Facts</b> tab:
-    <textarea id="factsIn" placeholder="Paste the whole Facts tab here, including the header row"></textarea>
-  </div>
-
-  <button id="make">Make game-data.js</button>
-
-  <h3>Checks</h3>
-  <ul id="checks"><li>Nothing made yet.</li></ul>
-
-  <div class="step">
-    <b>3.</b> Copy everything in this box. In GitHub, open <b>game-data.js</b>, click the pencil, select all, paste, and commit.
-    <textarea id="out" readonly></textarea>
-    <button id="copy">Copy to clipboard</button>
-  </div>
-
+<h1>Sheet → Game</h1>
+<p>This page turns your node sheet into the <b>game-data.js</b> file the
+game reads. Nothing is sent anywhere; it all happens in this page.</p>
+<div class="step">
+<b>1.</b> In the node sheet, open the <b>Nodes</b> tab. Click the top-
+left corner (or press Ctrl+A / Cmd+A), copy (Ctrl+C / Cmd+C), and paste here:
+<textarea id="nodesIn" placeholder="Paste the whole Nodes tab here,
+including the header row"></textarea>
+</div>
+<div class="step">
+<b>2.</b> Do the same with the <b>Facts</b> tab:
+<textarea id="factsIn" placeholder="Paste the whole Facts tab here,
+including the header row"></textarea>
+</div>
+<button id="make">Make game-data.js</button>
+<h3>Checks</h3>
+<ul id="checks"><li>Nothing made yet.</li></ul>
+<div class="step">
+<b>3.</b> Copy everything in this box. In GitHub, open <b>game-
+data.js</b>, click the pencil, select all, paste, and commit.
+<textarea id="out" readonly></textarea>
+<button id="copy">Copy to clipboard</button>
+</div>
 <script>
 // Reads text copied from Excel or Google Sheets (cells split by tabs)
 function readTable(text) {
-  var rows = text.replace(/\r/g, "").split("\n").filter(function (r) { return r.trim() !== ""; });
-  if (!rows.length) return [];
-  var head = rows[0].split("\t").map(function (h) { return h.trim(); });
-  return rows.slice(1).map(function (r) {
-    var cells = r.split("\t"), obj = {};
-    head.forEach(function (h, i) { obj[h] = (cells[i] || "").trim(); });
-    return obj;
-  });
+var rows = text.replace(/\r/g,
+"").split("\n").filter(function (r) { return
+r.trim() !== ""; });
+if (!rows.length) return [];
+var head = rows[0].split("\t").map(function (h) { return h.trim(); });
+return rows.slice(1).map(function (r) {
+var cells = r.split("\t"), obj = {};
+head.forEach(function (h, i) { obj[h] = (cells[i] || "").trim(); });
+return obj;
+});
 }
-
-// Names of future scenes (not built yet): they show the "End of Scene 1" screen
-function isFuture(id) { return /^JHB_SC\d/.test(id) || /^MOV_/.test(id); }
-
+// Names of future scenes (not built yet): they show the "End of Scene 1"
+screen
+function isFuture(id) { return /^JHB
+SC\d/.test(id) || /^MOV
+_
+_
+/.test(id); }
 document.getElementById("make").onclick = function () {
-  var nodeRows = readTable(document.getElementById("nodesIn").value);
-  var factRows = readTable(document.getElementById("factsIn").value);
-  var checks = [];
-  var nodes = {}, start = "";
-
-  nodeRows.forEach(function (r) {
-    var id = r["Node ID"];
-    if (!id) return;
-    if (!start) start = id;                        // the first row is where the game starts
-    var choices = [];
-    for (var i = 1; i <= 5; i++) {
-      var label = r["Choice " + i + " label"], next = r["Choice " + i + " next"];
-      if (label && next) choices.push({ label: label, next: next });
-      else if (label || next) checks.push(["bad", id + ": Choice " + i + " needs both a label and a next node."]);
-    }
-    if (nodes[id]) checks.push(["bad", id + " appears twice. Each Node ID must be unique."]);
-    nodes[id] = {
-      step: r["Step"] || "", checkpoint: r["Checkpoint"] || "", avatar: r["Avatar"] || "ALL", role: r["Role"] || "",
-      location: r["Location"] || "", type: r["Type"] || "", timer: r["Timer (s)"] || "", hotspots: r["Hotspots (°)"] || "",
-      youtube: r["YouTube video ID"] || "", prompt: r["On-screen text / prompt"] || "",
-      choices: choices, saves: r["Saves to card"] || "", factIds: r["Fact IDs"] || "",
-      brandRule: r["Brand rule"] || "", brand: r["Brand slot"] || "", notes: r["Notes"] || ""
-    };
-    if (!choices.length) checks.push(["bad", id + " has no choices, so players will get stuck."]);
-    var spots = nodes[id].hotspots.split(",").filter(function (x) { return x.trim() !== ""; });
-    if (spots.length && spots.length !== choices.length) {
-      checks.push(["warn", id + " has " + spots.length + " hotspot direction(s) but " + choices.length + " choice(s). Give one direction per choice, in the same order."]);
-    }
-    if (nodes[id].brand && (/^closed/i.test(nodes[id].brandRule) || nodes[id].avatar === "MOV")) {
-      checks.push(["warn", id + " is a Life as a Movie screen with a brand (" + nodes[id].brand +
-        "). Only keep it if that brand has agreed in writing to appear in action and violence scenes."]);
-    }
-  });
-
-  var facts = factRows.filter(function (r) { return r["Fact ID"]; }).map(function (r) {
-    return { id: r["Fact ID"], topic: r["Topic"] || "", text: r["Fact as shown to the player"] || "",
-             link: r["Link shown in game"] || "", status: r["Status"] || "" };
-  });
-
-  // Walk every path a player can take, from the start, to find dead ends
-  var seen = {}, reached = {}, missing = {}, future = {};
-  var queue = [{ node: start, avatar: "", role: "", time: "" }];
-  while (queue.length) {
-    var p = queue.shift();
-    var key = p.node + "|" + p.avatar + "|" + p.role + "|" + p.time;
-    if (seen[key]) continue;
-    seen[key] = true;
-    var n = nodes[p.node];
-    if (!n) continue;
-    reached[p.node] = true;
-    var avatar = ["BIZ", "TOU", "MOV"].indexOf(n.avatar) >= 0 ? n.avatar : p.avatar;
-    var role = n.role || p.role;
-    n.choices.forEach(function (c) {
-      var time = n.saves === "arrival_time" ? c.label.split(" ")[0].toUpperCase() : p.time;
-      var target = c.next.replace("{AVATAR}", avatar || "BIZ").replace("{ROLE}", role).replace("{TIME}", time || "MORNING");
-      if (target.toUpperCase() === "FAIL") return;          // a wrong move: loses the stage, that's fine
-      if (nodes[target]) queue.push({ node: target, avatar: avatar, role: role, time: time });
-      else if (isFuture(target)) future[target] = true;
-      else missing[p.node + " → " + target] = true;
-    });
-  }
-  Object.keys(missing).forEach(function (m) {
-    checks.push(["bad", m + " : a player can reach this, but that node does not exist."]);
-  });
-  Object.keys(nodes).forEach(function (id) {
-    if (!reached[id]) checks.push(["warn", id + " can't be reached from the start. Fine if it's for later."]);
-  });
-
-  var count = Object.keys(nodes).length;
-  if (!count) checks.push(["bad", "No nodes found. Did you paste the Nodes tab with its header row?"]);
-  else checks.unshift(["ok", count + " nodes and " + facts.length + " facts read. Game starts at " + start + "."]);
-  var withVideo = Object.keys(nodes).filter(function (k) { return nodes[k].youtube; }).length;
-  checks.push(["ok", withVideo + " nodes have a YouTube video ID."]);
-  checks.push(["ok", Object.keys(future).length + " exits lead to the next scene (not built yet): " + Object.keys(future).sort().join(", ")]);
-  var cps = Object.keys(nodes).filter(function (k) { return /^y/i.test(nodes[k].checkpoint); });
-  checks.push([cps.length ? "ok" : "warn", cps.length ? "Stages start at: " + cps.join(", ") + "." :
-    "No Checkpoint rows: running out of time will restart the whole game."]);
-
-  var data = { start: start, nodes: nodes, facts: facts };
-  document.getElementById("out").value =
-    "/* Made with tool.html on " + new Date().toISOString().slice(0, 10) + ". Do not edit by hand: change the node sheet and run the tool again. */\n" +
-    "window.GAME_DATA = " + JSON.stringify(data, null, 2) + ";\n";
-
-  document.getElementById("checks").innerHTML = checks.map(function (c) {
-    return "<li class='" + c[0] + "'>" + c[1].replace(/</g, "&lt;") + "</li>";
-  }).join("");
+var nodeRows = readTable(document.getElementById("nodesIn").value);
+var factRows = readTable(document.getElementById("factsIn").value);
+var checks = [];
+var nodes = {}, start = "";
+nodeRows.forEach(function (r) {
+var id = r["Node ID"];
+if (!id) return;
+if (!start) start = id; // the first row is where
+the game starts
+var choices = [];
+for (var i = 1; i <= 5; i++) {
+var label = r["Choice " + i + " label"], next = r["Choice " + i + "
+next"];
+if (label && next) choices.push({ label: label, next: next });
+else if (label || next) checks.push(["bad"
+, id + ": Choice " + i + "
+needs both a label and a next node.
+"]);
+}
+if (nodes[id]) checks.push(["bad"
+, id + " appears twice. Each Node ID
+must be unique.
+"]);
+nodes[id] = {
+step: r["Step"] || ""
+, checkpoint: r["Checkpoint"] || ""
+, avatar:
+r["Avatar"] || "ALL"
+, role: r["Role"] || ""
+,
+location: r["Location"] || ""
+, type: r["Type"] || ""
+, timer: r["Timer
+(s)"] || ""
+, hotspots: r["Hotspots (°)"] || ""
+,
+youtube: r["YouTube video ID"] || ""
+, prompt: r["On-screen text /
+prompt"] || ""
+,
+choices: choices, saves: r["Saves to card"] || ""
+, factIds: r["Fact
+IDs"] || ""
+,
+brandRule: r["Brand rule"] || ""
+, brand: r["Brand slot"] || ""
+, notes:
+r["Notes"] || ""
 };
-
+if (!choices.length) checks.push(["bad"
+, id + " has no choices, so
+players will get stuck.
+"]);
+var spots = nodes[id].hotspots.split("
+,
+").filter(function (x) { return
+x.trim() !== ""; });
+if (spots.length && spots.length !== choices.length) {
+checks.push(["warn"
+, id + " has " + spots.length + " hotspot
+direction(s) but " + choices.length + " choice(s). Give one direction per
+choice, in the same order.
+"]);
+}
+if (nodes[id].brand && (/^closed/i.test(nodes[id].brandRule) ||
+nodes[id].avatar === "MOV")) {
+checks.push(["warn"
+, id + " is a Life as a Movie screen with a brand ("
++ nodes[id].brand +
+"). Only keep it if that brand has agreed in writing to appear in
+action and violence scenes.
+"]);
+}
+});
+var facts = factRows.filter(function (r) { return r["Fact ID"];
+}).map(function (r) {
+return { id: r["Fact ID"], topic: r["Topic"] || ""
+, text: r["Fact as
+shown to the player"] || ""
+,
+link: r["Link shown in game"] || ""
+, status: r["Status"] || ""
+};
+});
+// Walk every path a player can take, from the start, to find dead ends
+var seen = {}, reached = {}, missing = {}, future = {};
+var queue = [{ node: start, avatar: ""
+, role: ""
+, time: "" }];
+while (queue.length) {
+var p = queue.shift();
+var key = p.node + "|" + p.avatar + "|" + p.role + "|" + p.time;
+if (seen[key]) continue;
+seen[key] = true;
+var n = nodes[p.node];
+if (!n) continue;
+reached[p.node] = true;
+var avatar = ["BIZ"
+,
+"TOU"
+,
+"MOV"].indexOf(n.avatar) >= 0 ? n.avatar :
+p.avatar;
+var role = n.role || p.role;
+n.choices.forEach(function (c) {
+var time = n.saves === "arrival
+_
+time" ? c.label.split(" ")
+[0].toUpperCase() : p.time;
+var target = c.next.replace("{AVATAR}"
+, avatar || "BIZ").replace("
+{ROLE}"
+, role).replace("{TIME}"
+, time || "MORNING");
+if (target.toUpperCase() === "FAIL") return; // a wrong move:
+loses the stage, that's fine
+if (nodes[target]) queue.push({ node: target, avatar: avatar, role:
+role, time: time });
+else if (isFuture(target)) future[target] = true;
+else missing[p.node + " → " + target] = true;
+});
+}
+Object.keys(missing).forEach(function (m) {
+checks.push(["bad"
+, m + " : a player can reach this, but that node does
+not exist.
+"]);
+});
+Object.keys(nodes).forEach(function (id) {
+if (!reached[id]) checks.push(["warn"
+, id + " can't be reached from the
+start. Fine if it's for later.
+"]);
+});
+var count = Object.keys(nodes).length;
+if (!count) checks.push(["bad"
+,
+"No nodes found. Did you paste the Nodes
+tab with its header row?"]);
+else checks.unshift(["ok"
+read. Game starts at " + start + "
+, count + " nodes and " + facts.length + " facts
+"]);
+.
+var withVideo = Object.keys(nodes).filter(function (k) { return
+nodes[k].youtube; }).length;
+checks.push(["ok"
+, withVideo + " nodes have a YouTube video ID.
+"]);
+checks.push(["ok"
+, Object.keys(future).length + " exits lead to the next
+scene (not built yet): " + Object.keys(future).sort().join("
+,
+")]);
+var cps = Object.keys(nodes).filter(function (k) { return
+/^y/i.test(nodes[k].checkpoint); });
+checks.push([cps.length ? "ok" : "warn"
+, cps.length ? "Stages start at: " +
+cps.join("
+,
+") + "
+.
+" :
+"No Checkpoint rows: running out of time will restart the whole game.
+"]);
+var data = { start: start, nodes: nodes, facts: facts };
+document.getElementById("out").value =
+"/* Made with tool.html on " + new Date().toISOString().slice(0, 10) + "
+Do not edit by hand: change the node sheet and run the tool again.
+*/\n" +
+"window.GAME
+_
+DATA = " + JSON.stringify(data, null, 2) + ";\n";
+.
+document.getElementById("checks").innerHTML = checks.map(function (c) {
+return "<li class='" + c[0] + "'>" + c[1].replace(/</g,
+"&lt;") + "
+</li>";
+}).join("");
+};
 document.getElementById("copy").onclick = function () {
-  var out = document.getElementById("out");
-  out.select();
-  navigator.clipboard.writeText(out.value).then(function () {
-    document.getElementById("copy").textContent = "Copied ✓";
-  }, function () { document.execCommand("copy"); });
+var out = document.getElementById("out");
+out.select();
+navigator.clipboard.writeText(out.value).then(function () {
+document.getElementById("copy").textContent = "Copied ✓";
+}, function () { document.execCommand("copy"); });
 };
 </script>
 </body>
-</html>
+</html>  
