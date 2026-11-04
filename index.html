@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLURIVERSITY — Johannesburg</title>
+  <style>
+    /* ---------- Colours and fonts (safe to change) ---------- */
+    :root {
+      --bg: #0d1117;          /* page background */
+      --panel: #161b22;       /* boxes */
+      --text: #f0f3f6;        /* main text */
+      --muted: #9aa4af;       /* small grey text */
+      --gold: #f2b134;        /* buttons and highlights */
+      --card: #fbf6e9;        /* arrivals card paper */
+      --ink: #1d2733;         /* arrivals card text */
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: Arial, Helvetica, sans-serif; line-height: 1.4;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 20px; border-bottom: 1px solid #263040;
+    }
+    header h1 { font-size: 18px; letter-spacing: 3px; margin: 0; }
+    header .tools button { margin-left: 8px; }
+    main {
+      display: grid; grid-template-columns: 1fr 300px; gap: 20px;
+      padding: 20px; max-width: 1200px; margin: 0 auto;
+    }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+    #where { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+    /* Video area: keeps a 16:9 shape */
+    #screen {
+      position: relative; width: 100%; aspect-ratio: 16 / 9;
+      background: #000; border-radius: 10px; overflow: hidden;
+    }
+    #player, #player iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #placeholder, #choicescreen {
+      position: absolute; inset: 0; display: none;
+      flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 24px;
+    }
+    #placeholder { background: repeating-linear-gradient(45deg, #1a2230, #1a2230 20px, #202a3a 20px, #202a3a 40px); }
+    #placeholder .tag { font-family: monospace; color: var(--gold); font-size: 18px; margin: 6px 0; }
+    #choicescreen { background: radial-gradient(circle at top, #23314a, #0d1117); }
+    #choicescreen.cardstyle { background: var(--card); color: var(--ink); }
+    #prompt { font-size: 26px; font-weight: bold; margin: 0 0 18px; }
+
+    /* Choice buttons */
+    #choices { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+    #choices.overlay {
+      position: absolute; left: 0; right: 0; bottom: 0; margin: 0;
+      padding: 14px; background: linear-gradient(transparent, rgba(0,0,0,.85));
+    }
+    button {
+      font: inherit; cursor: pointer; border: none; border-radius: 8px;
+      padding: 10px 16px; background: #2b3646; color: var(--text);
+    }
+    button.choice { background: var(--gold); color: #111; font-weight: bold; font-size: 16px; padding: 12px 20px; }
+    button.choice:hover { filter: brightness(1.1); }
+    .moreinfo { display: block; font-size: 12px; font-weight: normal; margin-top: 4px; color: #333; }
+
+    #fact {
+      display: none; margin-top: 14px; padding: 12px 14px; border-left: 4px solid var(--gold);
+      background: var(--panel); border-radius: 6px; font-size: 14px;
+    }
+
+    /* Arrivals card (the save file) */
+    aside { background: var(--card); color: var(--ink); border-radius: 10px; padding: 16px; align-self: start; }
+    aside h2 { margin: 0 0 4px; font-size: 16px; letter-spacing: 2px; }
+    aside .sub { font-size: 12px; color: #6b7480; margin-bottom: 12px; }
+    aside dl { margin: 0; }
+    aside dt { font-size: 11px; text-transform: uppercase; color: #6b7480; margin-top: 8px; }
+    aside dd { margin: 0; font-weight: bold; border-bottom: 1px dashed #c8bfa6; padding-bottom: 4px; }
+    #devinfo { margin-top: 16px; font-size: 12px; color: var(--muted); }
+
+    /* The countdown clock */
+    #clock { display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 5; }
+    #clockbar { height: 8px; width: 100%; background: var(--gold); transition: width .1s linear; }
+    #clocknum {
+      position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(0,0,0,.7); color: var(--gold); font-size: 22px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #clock.urgent #clockbar { background: #e5484d; }
+    #clock.urgent #clocknum { color: #fff; background: #e5484d; animation: pulse .5s infinite alternate; }
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+    /* "Time's up" screen */
+    #timeup {
+      position: absolute; inset: 0; z-index: 6; display: none;
+      flex-direction: column; justify-content: center; align-items: center; text-align: center;
+      background: rgba(120, 10, 15, .92); color: #fff;
+    }
+    #timeup b { font-size: 34px; letter-spacing: 2px; }
+
+    /* "Did you know?" bubble (tap to reveal, then it goes in the Fact file) */
+    #bubble { display: none; position: absolute; top: 16px; left: 16px; z-index: 4; max-width: 60%; }
+    #bubble-btn { background: rgba(255,255,255,.92); color: #1d2733; border-radius: 20px; font-weight: bold; padding: 8px 14px; animation: pulse 1.2s infinite alternate; }
+    #bubble-text { display: none; margin-top: 8px; background: rgba(255,255,255,.95); color: #1d2733; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+    #bubble.open #bubble-text { display: block; }
+    #bubble.open #bubble-btn { animation: none; }
+    #factfile h3 { font-size: 13px; letter-spacing: 2px; margin: 18px 0 6px; }
+    #factfile p { font-size: 12px; margin: 0 0 8px; padding-left: 8px; border-left: 3px solid var(--gold); }
+
+    /* Sponsor line (only shows when a node's Brand slot is filled in) */
+    #sponsor { display: none; margin-top: 10px; font-size: 13px; color: var(--muted); text-align: right; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PLURIVERSITY</h1>
+    <div class="tools">
+      <button id="backbtn">◀ Back</button>
+      <button id="restartbtn">Start over</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div id="where"></div>
+      <div id="screen">
+        <div id="player"></div>
+        <div id="placeholder">
+          <div>VIDEO GOES HERE</div>
+          <div class="tag" id="ph-id"></div>
+          <div id="ph-note"></div>
+          <p><button id="ph-play">▶ Pretend the video played</button></p>
+        </div>
+        <div id="choicescreen">
+          <p id="prompt"></p>
+        </div>
+        <div id="choices"></div>
+        <div id="clock"><div id="clockbar"></div><div id="clocknum"></div></div>
+        <div id="timeup"><b id="timeup-title">TIME'S UP</b><p>You lose this stage. Back to the start of it.</p></div>
+        <div id="bubble"><button id="bubble-btn">💡 Did you know?</button><div id="bubble-text"></div></div>
+      </div>
+      <div id="sponsor"></div>
+      <div id="fact"></div>
+      <div id="devinfo"></div>
+    </section>
+
+    <aside>
+      <h2>ARRIVALS CARD</h2>
+      <div class="sub">Republic of South Africa · O.R. Tambo International</div>
+      <dl id="card"></dl>
+      <div id="factfile"></div>
+    </aside>
+  </main>
+
+  <!-- 1. Your game content (made from the node sheet) -->
+  <script src="game-data.js"></script>
+  <!-- 2. The game engine (you never need to change this) -->
+  <script src="game.js"></script>
+  <!-- 3. YouTube's player -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
