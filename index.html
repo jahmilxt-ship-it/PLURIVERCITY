@@ -46,8 +46,7 @@ text-align: center; padding: 24px;
 }
 #placeholder { background: repeating-linear-gradient(45deg, #1a2230,
 #1a2230 20px, #202a3a 20px, #202a3a 40px); }
-#placeholder .tag { font-family: monospace; color: var(--gold); font-
-size: 18px; margin: 6px 0; }
+#placeholder .tag { font-family: monospace; color: var(--gold); font-size: 18px; margin: 6px 0; }
 #choicescreen { background: radial-gradient(circle at top, #23314a,
 #0d1117); }
 #choicescreen.cardstyle { background: var(--card); color: var(--ink); }
@@ -67,11 +66,9 @@ padding: 10px 16px; background: #2b3646; color: var(--text);
 button.choice { background: var(--gold); color: #111; font-weight: bold;
 font-size: 16px; padding: 12px 20px; }
 button.choice:hover { filter: brightness(1.1); }
-.moreinfo { display: block; font-size: 12px; font-weight: normal; margin-
-top: 4px; color: #333; }
+.moreinfo { display: block; font-size: 12px; font-weight: normal; margin-top: 4px; color: #333; }
 #fact {
-solid var(--gold);
-display: none; margin-top: 14px; padding: 12px 14px; border-left: 4px
+display: none; margin-top: 14px; padding: 12px 14px; border-left: 4px solid var(--gold);
 background: var(--panel); border-radius: 6px; font-size: 14px;
 }
 /* Arrivals card (the save file) */
@@ -86,15 +83,13 @@ aside dd { margin: 0; font-weight: bold; border-bottom: 1px dashed
 #c8bfa6; padding-bottom: 4px; }
 #devinfo { margin-top: 16px; font-size: 12px; color: var(--muted); }
 /* The countdown clock */
-#clock { display: none; position: absolute; top: 0; left: 0; right: 0; z-
-index: 5; }
+#clock { display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 5; }
 #clockbar { height: 8px; width: 100%; background: var(--gold);
 transition: width .1s linear; }
 #clocknum {
 position: absolute; top: 14px; right: 14px; width: 44px; height: 44px;
 border-radius: 50%;
-background: rgba(0,0,0,.7); color: var(--gold); font-size: 22px; font-
-weight: bold;
+background: rgba(0,0,0,.7); color: var(--gold); font-size: 22px; font-weight: bold;
 display: flex; align-items: center; justify-content: center;
 }
 #clock.urgent #clockbar { background: #e5484d; }
@@ -112,10 +107,8 @@ background: rgba(120, 10, 15, .92); color: #fff;
 #timeup b { font-size: 34px; letter-spacing: 2px; }
 /* "Did you know?" bubble (tap to reveal, then it goes in the Fact file)
 */
-#bubble { display: none; position: absolute; top: 16px; left: 16px; z-
-index: 4; max-width: 60%; }
-#bubble-btn { background: rgba(255,255,255,.92); color: #1d2733; border-
-radius: 20px; font-weight: bold; padding: 8px 14px; animation: pulse 1.2s
+#bubble { display: none; position: absolute; top: 16px; left: 16px; z-index: 4; max-width: 60%; }
+#bubble-btn { background: rgba(255,255,255,.92); color: #1d2733; border-radius: 20px; font-weight: bold; padding: 8px 14px; animation: pulse 1.2s
 infinite alternate; }
 #bubble-text { display: none; margin-top: 8px; background:
 rgba(255,255,255,.95); color: #1d2733; padding: 12px 14px; border-radius:
@@ -127,8 +120,7 @@ rgba(255,255,255,.95); color: #1d2733; padding: 12px 14px; border-radius:
 #factfile p { font-size: 12px; margin: 0 0 8px; padding-left: 8px;
 border-left: 3px solid var(--gold); }
 /* Sponsor line (only shows when a node's Brand slot is filled in) */
-#sponsor { display: none; margin-top: 10px; font-size: 13px; color: var(-
--muted); text-align: right; }
+#sponsor { display: none; margin-top: 10px; font-size: 13px; color: var(--muted); text-align: right; }
 </style>
 </head>
 <body>
@@ -178,8 +170,6 @@ International</div>
 <!-- 2. The game engine (you never need to change this) -->
 <script src="game.js"></script>
 <!-- 3. YouTube's player -->
-<script src="https://www.youtube.com/iframe
-_
-api"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>  
