@@ -1,4 +1,4 @@
-/* Made with tool.html on 2026-11-04. Do not edit by hand: change the node sheet and run the tool again. */
+/* Made with tool.html on 2026-11-14. Do not edit by hand: change the node sheet and run the tool again. */
 window.GAME_DATA = {
   "start": "JHB_ARR_000",
   "nodes": {
